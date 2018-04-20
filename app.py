@@ -42,8 +42,7 @@ for test in os.listdir(link_tests):  # add test file, compile, check
 
             subprocess.call('g++ check.cpp', shell=True)
 
-
-            process = subprocess.Popen('./a.out sum.in sum.out answer', shell=True)
+            subprocess.call('./a.out sum.in sum.out answer', shell=True)
 
             # Checker {}
 
