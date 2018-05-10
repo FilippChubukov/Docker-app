@@ -1,0 +1,12 @@
+{
+ "language" : "c++",
+
+ "code": "\n#include <cstdio>\n#include <cassert>\n#include <iostream>\n\nusing namespace std;\n\n#define NAME \"sum\"\n\nint main()\n{\n  assert(freopen(NAME \".in\", \"r\", stdin));\n  assert(freopen(NAME \".out\", \"w\", stdout));\n\n  long long a,b;\n  cin >> a >> b;\n  cout << a + b << endl;\n  return 0;\n}\n",
+
+ "path_to_tests": "/home/tests",
+
+ "time_limit": "100",
+ "ml": "100" 
+
+
+}
