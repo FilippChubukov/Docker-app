@@ -1,32 +1,33 @@
-
 FROM ubuntu:14.04
 
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+RUN echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
 
-EXPOSE	 5000
+RUN sudo apt-get update -y
 
-RUN sudo apt-get -y update
+RUN sudo apt-get install dialog -y
 
-RUN apt-get install dialog -y
+RUN sudo apt-get install software-properties-common -y
 
-RUN sudo apt-get -y install build-essential
+RUN sudo apt-get install build-essential -y
 
-ADD app.py /home/app/
+# install gcc v.7
+RUN sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+RUN sudo apt-get update
+RUN sudo apt-get install gcc-7 g++-7 -y
+RUN sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
 
-ADD /tests /home/tests
+RUN sudo apt-get install default-jre -y
+RUN sudo apt-get install default-jdk -y
 
-ADD testlib.h /home/app/
+RUN sudo apt-get install python -y
 
-ADD check.cpp /home/app/
+RUN sudo apt-get install wget -y
 
-ADD app.json /home/app/
+ADD checker.py /home/check/
 
-WORKDIR /home/app
+RUN wget https://raw.githubusercontent.com/MikeMirzayanov/testlib/master/testlib.h
+RUN mv testlib.h /home/check/
 
-CMD ["python3", "./app.py"]
+WORKDIR /home/check
 
-
-
-
-
-
+CMD ["python3", "./checker.py"]
