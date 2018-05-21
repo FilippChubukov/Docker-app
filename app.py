@@ -42,6 +42,16 @@ elif language == 'Java':
     solution.write(data['code'])
     solution.close()
 
+elif language == 'Python2' or language == 'Python3':
+    solution = open('solution.py', 'w')
+    solution.write(data['code'])
+    solution.close()
+
+elif language == 'C':
+    solution = open('solution.c', 'w')
+    solution.write(data['code'])
+    solution.close()
+
 else:
     result = {
         'status': 'error',
@@ -74,6 +84,11 @@ for test in os.listdir(link_tests):  # Add test file, compile, check
         elif language == 'Java':
             subprocess.call('javac Main.java > compilation.txt 2>&1', shell=True)
 
+        elif language == 'C':
+            subprocess.call('gcc solution.c > compilation.txt 2>&1', shell=True)
+
+
+
 
         compilation = open('compilation.txt', 'r')
         compilation_result = compilation.read()
@@ -91,9 +106,17 @@ for test in os.listdir(link_tests):  # Add test file, compile, check
                 if language == 'C++':
                     subprocess.call('./a.out', timeout=time_limit, shell=True)
 
-                if language == 'Java':
+                elif language == 'Java':
                     subprocess.call('java Main', timeout=time_limit, shell=True)
 
+                elif language == 'Python3':
+                    subprocess.call('python3 solution.py > workchecker.txt 2>&1', timeout=time_limit, shell=True)
+
+                elif language == 'Python':
+                    subprocess.call('python solution.py > workchecker.txt 2>&1', timeout=time_limit, shell=True)
+
+                elif language == 'C':
+                    subprocess.call('./a.out', timeout=time_limit, shell=True)
 
             except:
                 result['result']['verdict'] = 'TL'
@@ -104,12 +127,31 @@ for test in os.listdir(link_tests):  # Add test file, compile, check
                 command = './a.out < ' + filename + '.in > ' + filename + '.out'
                 subprocess.call(command, timeout=time_limit, shell=True)
 
-            if language == 'Java':
+            elif language == 'Java':
                 command = 'java Main < ' + filename + '.in > ' + filename + '.out'
                 subprocess.call(command, timeout=time_limit, shell=True)
 
+            elif language == 'Python3':
+                command = 'python3 < ' + filename + '.in > ' + filename + '.out'
+                subprocess.call(command, timeout=time_limit, shell=True)
 
+            elif language == 'Python2':
+                command = 'python < ' + filename + '.in > ' + filename + '.out'
+                subprocess.call(command, timeout=time_limit, shell=True)
 
+            elif language == 'C++':
+                command = './a.out < ' + filename + '.in > ' + filename + '.out'
+                subprocess.call(command, timeout=time_limit, shell=True)
+                
+        # WorkCheck for Python
+        if language == 'Python2' or language == 'Python3':
+            work_check = open('workchecker.txt', 'r')
+
+            if 'Traceback' in work_check.read():
+                result['result']['verdict'] = 'CE'
+                result['result']['message'] = compilation_result
+                work_check.close()
+                break
 
         # Run checker
         subprocess.call('g++ --std=c++17 check.cpp', shell=True)
