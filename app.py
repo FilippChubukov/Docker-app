@@ -3,13 +3,13 @@ import shutil
 import subprocess
 import os
 
-infoIn = open('/home/filipp/share/data.json', 'r')
-infoOut = open('/home/filipp/share/result.json', 'w')
+infoIn = open('/home/share/data.json', 'r')
+infoOut = open('/home/share/result.json', 'w')
 data = json.load(infoIn)
 infoIn.close()  # Open input & output files
 
 language = data['language']
-problems_dir = '/home/filipp/problems/'
+problems_dir = '/home/problems/'
 link_task = os.path.join(problems_dir, data['path_to_task'])
 link_tests = os.path.join(link_task, 'tests')
 time_limit = float(data['time_limit'])
@@ -90,15 +90,15 @@ for test in os.listdir(link_tests):  # Add test file, compile, check
 
 
 
-        compilation = open('compilation.txt', 'r')
-        compilation_result = compilation.read()
-        compilation.close()
+            compilation = open('compilation.txt', 'r')
+            compilation_result = compilation.read()
+            compilation.close()
 
         # Handle compilation error
-        if 'error' in compilation_result:
-            result['result']['verdict'] = 'CE'
-            result['result']['message'] = compilation_result
-            break
+            if 'error' in compilation_result:
+                result['result']['verdict'] = 'CE'
+                result['result']['message'] = compilation_result
+                break
 
         # Run code
         if files == 1:          # FILE
@@ -142,7 +142,7 @@ for test in os.listdir(link_tests):  # Add test file, compile, check
             elif language == 'C++':
                 command = './a.out < ' + filename + '.in > ' + filename + '.out'
                 subprocess.call(command, timeout=time_limit, shell=True)
-                
+
         # WorkCheck for Python
         if language == 'Python2' or language == 'Python3':
             work_check = open('workchecker.txt', 'r')
