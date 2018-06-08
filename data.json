@@ -1,5 +1,5 @@
 {
- "language" : "Python3",
+ "language" : "Python2",
  "code": "import json\nimport shutil\nimport subprocess\nimport os\n\ninfoIn = open('sum.in', 'r')\ninfoOut = open('sum.out', 'w')\n\nf = infoIn.readline()\n\nd = f.split()\n\ninfoOut.write(str(int(d[0])+int(d[1])))\n\ninfoOut.close()\ninfoIn.close()\n\nif 1 ==1:\n    f = 'ff'\n\n\n\n\n\n\n",
 
  "path_to_task": "sum",
