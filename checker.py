@@ -4,7 +4,19 @@ import subprocess
 import os
 from multiprocessing import Pool as ThreadPool
 
-infoIn = open('/home/share/data.json', 'r')
+try:
+    infoIn = open('/home/share/data.json', 'r')
+
+except FileNotFoundError:
+    infoOut = open('/home/share/result.json', 'w')
+    result = {
+        'status': 'error',
+        'message': 'no json file'
+    }
+    json.dump(result, infoOut)
+    infoOut.close()
+    exit(0)
+
 infoOut = open('/home/share/result.json', 'w')
 data = json.load(infoIn)
 infoIn.close()  # Open input & output files
@@ -29,25 +41,14 @@ result = {
     }
 }
 
-
 # Write code to file
-if language == 'C++':
-    solution = open('solution.cpp', 'w')
+if language == 'C++' or language == 'Python2' or language == 'Python3' or language == 'C':
+    solution = open('solution', 'w')
     solution.write(data['code'])
     solution.close()
 
 elif language == 'Java':
     solution = open('Main.java', 'w')
-    solution.write(data['code'])
-    solution.close()
-
-elif language == 'Python2' or language == 'Python3':
-    solution = open('solution.py', 'w')
-    solution.write(data['code'])
-    solution.close()
-
-elif language == 'C':
-    solution = open('solution.c', 'w')
     solution.write(data['code'])
     solution.close()
 
@@ -63,122 +64,107 @@ else:
 # Получаем исполнялку чекера чтобы потом ее раскидать по папкам
 shutil.copyfile('/home/problems/' + filename + '/' + 'check.cpp',
                         '/home/check/checker.cpp')
-subprocess.call('g++ --std=c++17 checker.cpp', shell=True)
-
-
-
+subprocess.call('g++ checker.cpp', shell=True)
 
 # Раскидываем тесты, testlib, исполнялку.
+FROM = ['a.out', 'testlib.h']
+TO = [filename, '/answer', 'checker', 'testlib.h']
 for test in os.listdir(link_tests):
     if '.' not in os.path.basename(link_tests + '/' + test):
         answer = test + '.a'
 
         os.makedirs('/home/tests/' + str(test_number))
 
-        shutil.copyfile(os.path.join(link_tests, test),
-                        '/home/tests/' + str(test_number) + '/' + filename + '.in')
+        FROM = [os.path.join(link_tests, test),
+                os.path.join(link_tests, answer),
+                os.path.join(os.getcwd(), 'a.out'),
+                os.path.join(os.getcwd(), 'testlib.h')]
 
-        shutil.copyfile(os.path.join(link_tests, answer),
-                        '/home/tests/' + str(test_number) + '/answer')
+        TO = ['/home/tests/' + str(test_number) + '/' + filename + '.in',
+              '/home/tests/' + str(test_number) + '/answer',
+              '/home/tests/' + str(test_number) + '/checker',
+              '/home/tests/' + str(test_number) + '/testlib.h']
 
-        shutil.copy(os.path.join(os.getcwd(), 'a.out'),
-                        '/home/tests/' + str(test_number) + '/checker')
+        for i in range(0, 4):
+            shutil.copy(FROM[i], TO[i])
 
-        shutil.copyfile(os.path.join(os.getcwd(), 'testlib.h'),
-                        '/home/tests/' + str(test_number) + '/testlib.h')
         test_number = test_number + 1
-
 
 # В зависимости от языка раскидываем исполнялку или само решение по папкам с тестами
 # Сначала компилим и проверяем компиляцию
 compilation_result = 'ok'
+if language != 'Python3' and language != 'Python2':
+    compilation = {'C++': 'g++ -x c++ solution > compilation.txt 2>&1',
+                   'C': 'gcc -x c solution > compilation.txt 2>&1',
+                   'Java': 'javac Main.java > compilation.txt 2>&1'}
 
-if language == 'C++':
-    subprocess.call('g++ solution.cpp > compilation.txt 2>&1', shell=True)
+    subprocess.call(compilation[language], shell=True)
+
     compilation = open('compilation.txt', 'r')
     compilation_result = compilation.read()
     compilation.close()
 
-elif language == 'Java':
-    subprocess.call('javac Main.java > compilation.txt 2>&1', shell=True)
-    compilation = open('compilation.txt', 'r')
-    compilation_result = compilation.read()
-    compilation.close()
-
-elif language == 'C':
-    subprocess.call('gcc solution.c > compilation.txt 2>&1', shell=True)
-    compilation = open('compilation.txt', 'r')
-    compilation_result = compilation.read()
-    compilation.close()
-
-
-# Handle compilation error
-if 'error' in compilation_result:
+    # Handle compilation error
+    if 'error' in compilation_result:
         result['result']['verdict'] = 'CE'
         result['result']['message'] = compilation_result
         json.dump(result, infoOut)
         infoOut.close()
         exit(0)
 
-if language == 'C++':
+    FROM = {'C': os.path.join(os.getcwd(), 'a.out'),
+            'C++': os.path.join(os.getcwd(), 'a.out'),
+            'Java': os.path.join(os.getcwd(), 'Main.class')}
+
+    TO = {'C++': '/a.out', 'C': '/a.out', 'Java': '/Main.class'}
+
     for i in range(1, test_number):
-        shutil.copy(os.path.join(os.getcwd(), 'a.out'),
-                        '/home/tests/' + str(i) + '/a.out')
+        shutil.copy(FROM[language], '/home/tests/' + str(i) + TO[language])
 
-elif language == 'C':
+
+else:
     for i in range(1, test_number):
-        shutil.copyfile(os.path.join(os.getcwd(), 'a.out'),
-                        '/home/tests/' + str(i) + '/a.out')
+        shutil.copyfile(os.path.join(os.getcwd(), 'solution'),
+                        '/home/tests/' + str(i) + '/solution')
 
-elif language == 'Java':
-    for i in range(1, test_number):
-        shutil.copyfile(os.path.join(os.getcwd(), 'Main.class'),
-                        '/home/tests/' + str(i) + '/Main.class')
+    # WorkCheck for Python
+    os.chdir('/home/tests/1')
+    if files == 1:
+        try:
+            if language == 'Python3':
+                subprocess.call('python3 solution > workchecker.txt 2>&1', timeout=100, shell=True)
 
-elif language == 'Python2' or language == 'Python3':
-    for i in range(1, test_number):
-        shutil.copyfile(os.path.join(os.getcwd(), 'solution.py'),
-                        '/home/tests/' + str(i) + '/solution.py')
+            else:
+                subprocess.call('python solution > workchecker.txt 2>&1', timeout=100, shell=True)
+        except:
+            result['result']['verdict'] = 'TL'
 
- # WorkCheck for Python
-    if language == 'Python2' or language == 'Python3':
-        os.chdir('/home/tests/1')
-        if files == 1:
-            try:
-                if language == 'Python3':
-                    subprocess.call('python3 solution.py > workchecker.txt 2>&1', timeout=100, shell=True)
+    else:
+        try:
+            if language == 'Python3':
+                command = 'python3 solution < ' + filename + '.in > ' + filename + '.out' + 'workchecker.txt 2>&1'
+                subprocess.call(command, timeout=100, shell=True)
 
-                elif language == 'Python2':
-                    subprocess.call('python solution.py > workchecker.txt 2>&1', timeout=100, shell=True)
-            except:
-                result['result']['verdict'] = 'TL'
-
-        else:
-            try:
-                if language == 'Python3':
-                    command = 'python3 < ' + filename + '.in > ' + filename + '.out' + 'workchecker.txt 2>&1'
-                    subprocess.call(command, timeout=time_limit, shell=True)
-
-                elif language == 'Python2':
-                    command = 'python < ' + filename + '.in > ' + filename + '.out' + 'workchecker.txt 2>&1'
-                    subprocess.call(command, timeout=time_limit, shell=True)
-            except:
-                result['result']['verdict'] = 'TL'
+            else:
+                command = 'python solution < ' + filename + '.in > ' + filename + '.out' + 'workchecker.txt 2>&1'
+                subprocess.call(command, timeout=100, shell=True)
+        except:
+            result['result']['verdict'] = 'TL'
 
 
-        work_check = open('workchecker.txt', 'r')
-        work_result = work_check.read()
-        work_check.close()
+    work_check = open('workchecker.txt', 'r')
+    work_result = work_check.read()
+    work_check.close()
 
 
-        if 'Traceback' in work_result:
-            print(result['result']['verdict'])
-            result['result']['verdict'] = 'CE'
-            result['result']['message'] = work_result
+    if 'Traceback' in work_result:
+        print(result['result']['verdict'])
+        result['result']['verdict'] = 'CE'
+        result['result']['message'] = work_result
 
-            json.dump(result, infoOut)
-            infoOut.close()
-            exit(0)
+        json.dump(result, infoOut)
+        infoOut.close()
+        exit(0)
 
 
 
@@ -188,47 +174,28 @@ def check(number):
 
     os.chdir('/home/tests/' + str(number))
 
+    commands_files = {'C++': './a.out',
+                      'C': './a.out',
+                      'Java': 'java Main',
+                      'Python3': 'python3 solution',
+                      'Python2': 'python solution'}
+
+    commands_console = {'C++': './a.out < ' + filename + '.in > ' + filename + '.out',
+                        'C': './a.out < ' + filename + '.in > ' + filename + '.out',
+                        'Java': 'java Main < ' + filename + '.in > ' + filename + '.out',
+                        'Python3': 'python3 < ' + filename + '.in > ' + filename + '.out',
+                        'Python2': 'python < ' + filename + '.in > ' + filename + '.out'
+                        }
     if files == 1:  # FILE
             try:
-                if language == 'C++':
-                    subprocess.call('./a.out', timeout=time_limit, shell=True)
-
-                elif language == 'Java':
-                    subprocess.call('java Main', timeout=time_limit, shell=True)
-
-                elif language == 'Python3':
-                    subprocess.call('python3 solution.py', timeout=time_limit, shell=True)
-
-                elif language == 'Python2':
-                    subprocess.call('python solution.py ', timeout=time_limit, shell=True)
-
-                elif language == 'C':
-                    subprocess.call('./a.out', timeout=time_limit, shell=True)
+                subprocess.call(commands_files[language], timeout=time_limit, shell=True)
 
             except:
                 return 'TL'
 
     else:  # CONSOLE
         try:
-            if language == 'C++':
-                command = './a.out < ' + filename + '.in > ' + filename + '.out'
-                subprocess.call(command, timeout=time_limit, shell=True)
-
-            elif language == 'Java':
-                command = 'java Main < ' + filename + '.in > ' + filename + '.out'
-                subprocess.call(command, timeout=time_limit, shell=True)
-
-            elif language == 'Python3':
-                command = 'python3 < ' + filename + '.in > ' + filename + '.out' + 'workchecker.txt 2>&1'
-                subprocess.call(command, timeout=time_limit, shell=True)
-
-            elif language == 'Python2':
-                command = 'python < ' + filename + '.in > ' + filename + '.out'
-                subprocess.call(command, timeout=time_limit, shell=True)
-
-            elif language == 'C++':
-                command = './a.out < ' + filename + '.in > ' + filename + '.out'
-                subprocess.call(command, timeout=time_limit, shell=True)
+            subprocess.call(commands_console[language], timeout=time_limit, shell=True)
 
         except:
             return 'TL'

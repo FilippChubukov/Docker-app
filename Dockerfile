@@ -1,32 +1,22 @@
-FROM ubuntu:14.04
+FROM openjdk:8-jdk-alpine
 
-RUN echo "debconf debconf/frontend select Noninteractive" | debconf-set-selections
+RUN apk update && apk upgrade 
 
-RUN sudo apt-get update -y
+# install python
 
-RUN sudo apt-get install dialog -y
+RUN apk add python && apk add python3
 
-RUN sudo apt-get install software-properties-common -y
+# install gcc and g++
 
-RUN sudo apt-get install build-essential -y
+RUN apk add gcc && apk add g++
 
-# install gcc v.7
-RUN sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-RUN sudo apt-get update
-RUN sudo apt-get install gcc-7 g++-7 -y
-RUN sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
-
-RUN sudo apt-get install default-jre -y
-RUN sudo apt-get install default-jdk -y
-
-RUN sudo apt-get install python -y
-
-RUN sudo apt-get install wget -y
+# Add script check
 
 ADD checker.py /home/check/
 
-RUN wget https://raw.githubusercontent.com/MikeMirzayanov/testlib/master/testlib.h
-RUN mv testlib.h /home/check/
+# Add library for checker.cpp
+
+ADD testlib.h /home/check/
 
 WORKDIR /home/check
 
